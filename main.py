@@ -96,9 +96,9 @@ def _main():
                 vlc_player.enqueue_idle_video()
                 if arduino.in_waiting > 0:
                     arduino.read(arduino.in_waiting)  # dump remaining bytes from stream
-                print(f"Waiting til next trigger {wait_after_trigger}")
+                print(f"Waiting til next trigger, {wait_after_trigger} sec")
                 time.sleep(wait_after_trigger)
-        ###TODO insert rewind function
+        vlc_player.rewind_video()
         time.sleep(wait_time)
 
 
@@ -106,6 +106,6 @@ if __name__ == '__main__':
     try:
         _main()
     except KeyboardInterrupt:
-        # subprocess.Popen.kill('vlc') ###TODO this doesnt work
+        serial.Serial.close()
         subprocess.call(['killall vlc'])
         print('killing program')
