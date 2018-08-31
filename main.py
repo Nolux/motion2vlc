@@ -71,13 +71,13 @@ def _main():
     send_max_pulsewidth(max_distance, arduino)
 
     # VLC settings
-
-    active_video_file = 'Netflix_Innocents_test_03.mp4'
-    idle_video_file = 'bv.mp4'
+    videofolder = Path('motion2vlc')
+    active_video_file = videofolder / 'Netflix_Innocents_test_03.mp4'
+    idle_video_file = videofolder / 'bv.mp4'
     vlc_player = VLC(active_video_file, idle_video_file)
 
     # Log settings
-    logfolder = Path('log')
+    logfolder = Path('motion2vlc/log')
     logfolder.mkdir(parents=True, exist_ok=True)
     logfile = logfolder / f'log - {time.strftime(format("%d %b %Y"))}.txt'
     triggercount = 0
@@ -86,26 +86,26 @@ def _main():
     vlc_player.play_idle_video()
 
     while True:
-        distance = get_current_distance(arduino)
-        print('distance read', distance)
-        if distance != -1.:
-            if distance < trigger_distance:
-                triggercount += 1
-                update_logfile(logfile, f'{time.strftime(format("%d %b %Y %H:%M:%S"))} - {triggercount}\n')
-                vlc_player.play_active()
-                vlc_player.enqueue_idle_video()
-                if arduino.in_waiting > 0:
-                    arduino.read(arduino.in_waiting)  # dump remaining bytes from stream
-                print(f"Waiting til next trigger, {wait_after_trigger} sec")
-                time.sleep(wait_after_trigger)
-        vlc_player.rewind_video()
-        time.sleep(wait_time)
+        try:
+            distance = get_current_distance(arduino)
+            print('distance read', distance)
+            if distance != -1.:
+                if distance < trigger_distance:
+                    triggercount += 1
+                    update_logfile(logfile, f'{time.strftime(format("%d %b %Y %H:%M:%S"))} - {triggercount}\n')
+                    vlc_player.play_active()
+                    vlc_player.enqueue_idle_video()
+                    if arduino.in_waiting > 0:
+                        arduino.read(arduino.in_waiting)  # dump remaining bytes from stream
+                    print(f"Waiting til next trigger, {wait_after_trigger} sec")
+                    time.sleep(wait_after_trigger)
+            #vlc_player.rewind_video()
+            time.sleep(wait_time)
+        except KeyboardInterrupt:
+            arduino.close()
+            subprocess.call(['killall vlc'])
+            print('killing program')
 
 
 if __name__ == '__main__':
-    try:
-        _main()
-    except KeyboardInterrupt:
-        serial.Serial.close()
-        subprocess.call(['killall vlc'])
-        print('killing program')
+    _main()
